@@ -17,7 +17,7 @@ hassio_api: true
 hassio_role: manager
 panel_icon: mdi:download-network
 privileged: [NET_ADMIN, NET_RAW, PERFMON, SYS_ADMIN]
-image: "ghcr.io/dsander/{arch}-addon-network-manager-fix"
+image: "ghcr.io/dsander/{arch}-addon-multiple-network-interface-fixes"
 options:
   primary_connection: ""
   sleep_time_seconds: 60
