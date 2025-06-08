@@ -1,0 +1,4 @@
+# Repository configuration for Home Assistant add-ons
+name:  Multiple Network Interface Fixes Add-ons
+url: 'https://github.com/dsander/ha-addons'
+maintainer: Dominik Sander <git@dsander.de>
