@@ -1,0 +1,72 @@
+#!/usr/bin/with-contenv bashio
+# ==============================================================================
+# Start service
+# ==============================================================================
+
+bashio::log.info "Starting Multiple Network Interface Fixes Service..."
+declare primary_connection
+
+if ! bashio::config.exists log_level; then
+  bashio::log.magenta 'No log_level set in config, fallback to info'
+fi
+log_level=$(bashio::string.lower "$(bashio::config log_level info)")
+
+output_connection_info() {
+  bashio::log.info "Available connections:"
+  nmcli --fields NAME --terse connection show --active | while read -r connection_name;  do
+    bashio::log.info "$connection_name"
+  done
+}
+
+# Check if primary_connection is set in the configuration
+if ! bashio::config.has_value "primary_connection"; then
+  bashio::log.error "Primary connection has to be set in the configuration."
+  output_connection_info
+  exit 1
+else
+  primary_connection=$(bashio::config 'primary_connection')
+fi
+
+set +e
+output=$(nmcli -f connection.id,ipv4.addresses c show --active "$primary_connection")
+if [ $? -ne 0 ]; then
+  bashio::log.error "Failed to get primary connection details for '$primary_connection'."
+  output_connection_info
+  exit 1
+fi
+set -e
+bashio::log.info "Primary connection:"
+echo "$output" | while read -r line; do
+  bashio::log.info "$line"
+done
+
+bashio::config.has_value 'sleep_time_seconds' \
+  && SLEEP_TIME="$(bashio::config 'sleep_time_seconds')" || SLEEP_TIME=60
+
+while true; do
+  nmcli -t -f name connection show --active | while IFS= read -r conn; do
+    if [[ "$conn" == "$primary_connection" || "$conn" == "lo" ]]; then
+      bashio::log.info "Skipping connection: $conn"
+      continue
+    fi
+
+    values=$(nmcli --get-values ipv4.gateway,ipv4.dns,connection.mdns connection show --active "$conn")
+    gateway=$(echo "$values" | sed -n '1p')
+    dns=$(echo "$values" | sed -n '2p')
+    mdns=$(echo "$values" | sed -n '3p')
+
+    if [[ -z "$gateway" && -z "$dns" && "$mdns" == "0" ]]; then
+      bashio::log.info "'$conn' is already in desired state (no IPv4 gateway, DNS, mDNS disabled)"
+      continue
+    else
+      bashio::log.info "Setting '$conn' to desired state (no IPv4 gateway, DNS, mDNS disabled)"
+      nmcli connection modify "$conn" ipv4.gateway "" ipv4.dns "" connection.mdns 0
+      nmcli connection down "$conn" && nmcli connection up "$conn"
+      if [ $? -ne 0 ]; then
+          bashio::log.error "Failed to restart connection: $conn"
+          return 1
+      fi
+    fi
+  done
+  sleep "$SLEEP_TIME"
+done

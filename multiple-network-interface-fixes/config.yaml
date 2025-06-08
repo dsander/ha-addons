@@ -1,0 +1,27 @@
+name: Multiple Network Interface Fixes
+version: "0.1.0"
+slug: multiple_network_interface_fixes
+description: Disable mDNS and default gateway for all but the primary network interface
+init: false
+arch:
+  - armhf
+  - armv7
+  - aarch64
+  - amd64
+  - i386
+url: https://github.com/dsander/ha-addons/tree/main/multiple-network-interface-fixes
+full_access: true
+host_dbus: true
+host_network: true
+hassio_api: true
+hassio_role: manager
+panel_icon: mdi:download-network
+privileged: [NET_ADMIN, NET_RAW, PERFMON, SYS_ADMIN]
+image: "ghcr.io/dsander/{arch}-addon-network-manager-fix"
+options:
+  primary_connection: ""
+  sleep_time_seconds: 60
+
+schema:
+  primary_connection: "str"
+  sleep_time_seconds: "int(30,300)"
