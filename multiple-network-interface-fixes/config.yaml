@@ -1,5 +1,5 @@
 name: Multiple Network Interface Fixes
-version: "0.2.0"
+version: "0.2.1"
 slug: multiple_network_interface_fixes
 description: Disable mDNS and default gateway for all but the primary network interface
 init: false
