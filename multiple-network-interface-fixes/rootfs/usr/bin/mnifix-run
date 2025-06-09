@@ -50,18 +50,19 @@ while true; do
       continue
     fi
 
-    values=$(nmcli --get-values ipv4.gateway,ipv4.dns,connection.mdns connection show --active "$conn")
-    gateway=$(echo "$values" | sed -n '1p')
-    dns=$(echo "$values" | sed -n '2p')
-    mdns=$(echo "$values" | sed -n '3p')
+    values=$(nmcli --get-values connection.uuid,ipv4.gateway,ipv4.dns,connection.mdns connection show --active "$conn")
+    uuid=$(echo "$values" | sed -n '1p')
+    gateway=$(echo "$values" | sed -n '2p')
+    dns=$(echo "$values" | sed -n '3p')
+    mdns=$(echo "$values" | sed -n '4p')
 
     if [[ -z "$gateway" && -z "$dns" && "$mdns" == "0" ]]; then
       bashio::log.info "'$conn' is already in desired state (no IPv4 gateway, DNS, mDNS disabled)"
       continue
     else
-      bashio::log.info "Setting '$conn' to desired state (no IPv4 gateway, DNS, mDNS disabled)"
-      nmcli connection modify "$conn" ipv4.gateway "" ipv4.dns "" connection.mdns 0
-      nmcli connection down "$conn" && nmcli connection up "$conn"
+      bashio::log.info "Setting '$conn' ($uuid) to desired state (no IPv4 gateway, DNS, mDNS disabled)"
+      nmcli connection modify "$uuid" ipv4.gateway "" ipv4.dns "" connection.mdns 0
+      nmcli connection down "$uuid" && nmcli connection up "$uuid"
       if [ $? -ne 0 ]; then
           bashio::log.error "Failed to restart connection: $conn"
           return 1
